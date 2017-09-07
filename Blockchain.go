@@ -121,7 +121,7 @@ func main() {
 	logPath := c.LogPath
 
 	// Logger configuration
-	f := bchainlibs.PrepareLog( logPath, "blockchain" )
+	f := bchainlibs.PrepareLog( logPath, "monitor" )
 	defer f.Close()
 	backend := logging.NewLogBackend(f, "", 0)
 	backendFormatter := logging.NewBackendFormatter(backend, bchainlibs.LogFormat)
