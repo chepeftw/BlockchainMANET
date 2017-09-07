@@ -27,11 +27,13 @@ var blockchain []bchainlibs.Packet
 var queries map[string]bchainlibs.Packet = make(map[string]bchainlibs.Packet)
 
 func toOutput(payload bchainlibs.Packet) {
-	bchainlibs.SendGeneric( output, payload, log )
+	log.Debug("Sending Packet with TID " + payload.TID + " to channel output")
+	//bchainlibs.SendGeneric( output, payload, log )
 }
 
 func attendOutputChannel() {
-	bchainlibs.SendToNetwork( me.String(), bchainlibs.RouterPort, output, false, log, me)
+	log.Debug("Starting output channel")
+	//bchainlibs.SendToNetwork( me.String(), bchainlibs.RouterPort, output, false, log, me)
 }
 
 func resolveQuery() {
@@ -53,7 +55,7 @@ func resolveQuery() {
 
 // Function that handles the buffer channel
 func attendInputChannel() {
-
+	log.Debug("Starting input channel")
 	for {
 		j, more := <-input
 		if more {
@@ -64,21 +66,35 @@ func attendInputChannel() {
 			//source := payload.Source
 			tid := payload.TID
 
+			log.Debug("Incoming payload with TID = " + tid)
+
 			switch payload.Type {
 
 			case bchainlibs.QueryType:
+				log.Debug("Packet with QueryType")
 				queries[tid] = payload
 				resolveQuery()
 			break
 
 			case bchainlibs.VBlockType:
+				log.Debug("Packet with VBlockType")
 				if payload.IsValid() {
+					// Add the validation against the actual last block FROM the blockchain
+					log.Debug("Payload IS Valid")
 					blockchain = append( blockchain, payload )
 
-					copy := payload.Duplicate()
-					copy.Type = bchainlibs.LastBlockType
-					toOutput(copy) // SendLastBlock() basically
+					copyPayload := payload.Duplicate()
+					copyPayload.Type = bchainlibs.LastBlockType
+					toOutput(copyPayload) // SendLastBlock() basically
+				} else {
+					log.Debug("Payload NOT Valid")
 				}
+			break
+
+			case bchainlibs.InternalPing:
+				log.Info("Receiving PING from router with TID = " + tid)
+				payload := bchainlibs.AssemblePong(me)
+				toOutput(payload)
 			break
 
 			}
@@ -102,10 +118,10 @@ func main() {
 	c.GetConf( confPath )
 
 	targetSync := c.TargetSync
-
+	logPath := c.LogPath
 
 	// Logger configuration
-	f := bchainlibs.PrepareLog( "blockchain" )
+	f := bchainlibs.PrepareLog( logPath, "blockchain" )
 	defer f.Close()
 	backend := logging.NewLogBackend(f, "", 0)
 	backendFormatter := logging.NewBackendFormatter(backend, bchainlibs.LogFormat)
@@ -122,7 +138,7 @@ func main() {
 	bchainlibs.WaitForSync( targetSync, log )
 
 	// But first let me take a selfie, in a Go lang program is getting my own IP
-	me = treesiplibs.SelfieIP()
+	//me = treesiplibs.SelfieIP()
 	log.Info("Good to go, my ip is " + me.String())
 
 	// Lets prepare a address at any address at port 10000
