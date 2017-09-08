@@ -29,7 +29,7 @@ var queries map[string]bchainlibs.Packet = make(map[string]bchainlibs.Packet)
 
 func toOutput(payload bchainlibs.Packet) {
 	log.Debug("Sending Packet with TID " + payload.TID + " to channel output")
-	//bchainlibs.SendGeneric( output, payload, log )
+	bchainlibs.SendGeneric( output, payload, log )
 }
 
 func attendOutputChannel() {
