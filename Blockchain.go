@@ -140,7 +140,7 @@ func main() {
 	bchainlibs.WaitForSync( targetSync, log )
 
 	// But first let me take a selfie, in a Go lang program is getting my own IP
-	//me = treesiplibs.SelfieIP()
+	me = treesiplibs.SelfieIP()
 	log.Info("Good to go, my ip is " + me.String())
 
 	// Lets prepare a address at any address at port 10000
