@@ -16,6 +16,7 @@ var log = logging.MustGetLogger("blockchain")
 
 // +++++++++ Global vars
 var me net.IP = net.ParseIP(bchainlibs.LocalhostAddr)
+var cryptoPiece = "00"
 
 // +++++++++ Channels
 // For the Miner the Input and Output will be to Router
@@ -78,7 +79,7 @@ func attendInputChannel() {
 
 			case bchainlibs.VBlockType:
 				log.Debug("Packet with VBlockType")
-				if payload.IsValid() {
+				if payload.IsValid(cryptoPiece) {
 					// Add the validation against the actual last block FROM the blockchain
 					log.Debug("Payload IS Valid")
 					blockchain = append( blockchain, payload )
@@ -119,6 +120,7 @@ func main() {
 
 	targetSync := c.TargetSync
 	logPath := c.LogPath
+	cryptoPiece = c.CryptoPiece
 
 	// Logger configuration
 	f := bchainlibs.PrepareLog( logPath, "monitor" )
