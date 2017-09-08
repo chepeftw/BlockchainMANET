@@ -7,6 +7,7 @@ import (
 	"os"
 	"github.com/chepeftw/treesiplibs"
 	"encoding/json"
+	"time"
 )
 
 // +++++++++++++++++++++++++++
@@ -17,6 +18,7 @@ var log = logging.MustGetLogger("blockchain")
 // +++++++++ Global vars
 var me net.IP = net.ParseIP(bchainlibs.LocalhostAddr)
 var cryptoPiece = "00"
+var rootNode = "10.12.0.1"
 
 // +++++++++ Channels
 // For the Miner the Input and Output will be to Router
@@ -109,6 +111,19 @@ func attendInputChannel() {
 	}
 }
 
+func selectLeaderOfTheManet() {
+
+	// If I AM NEO ... send the first query
+	if me.String() == rootNode {
+
+		log.Info("The leader has been chosen!!! All hail the new KING!!! " + me.String())
+		time.Sleep(time.Second * 5)
+
+		query := bchainlibs.AssembleQuery(me, "function")
+		toOutput(query)
+	}
+}
+
 func main() {
 
 	confPath := "/app/conf.yml"
@@ -121,6 +136,7 @@ func main() {
 	targetSync := c.TargetSync
 	logPath := c.LogPath
 	cryptoPiece = c.CryptoPiece
+	rootNode = c.RootNode
 
 	// Logger configuration
 	f := bchainlibs.PrepareLog( logPath, "monitor" )
@@ -156,6 +172,9 @@ func main() {
 	go attendInputChannel()
 	// Run the Output channel! The direct messages to the router layer
 	go attendOutputChannel()
+
+	// Run the election of the leader!
+	go selectLeaderOfTheManet()
 
 	buf := make([]byte, 1024)
 
