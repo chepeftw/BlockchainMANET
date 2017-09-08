@@ -34,7 +34,7 @@ func toOutput(payload bchainlibs.Packet) {
 
 func attendOutputChannel() {
 	log.Debug("Starting output channel")
-	//bchainlibs.SendToNetwork( me.String(), bchainlibs.RouterPort, output, false, log, me)
+	bchainlibs.SendToNetwork( me.String(), bchainlibs.RouterPort, output, false, log, me)
 }
 
 func resolveQuery() {
