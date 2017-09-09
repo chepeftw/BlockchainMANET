@@ -47,7 +47,8 @@ func resolveQuery() {
 	// 	Collect data
 	// 	SendData -> val := true
 
-	val := false
+	// For the moment I'm testing what if one packet is generated.
+	val := me.String() == "10.12.0.10"
 
 	if val {
 		packet := bchainlibs.AssembleUnverifiedBlock(me, "data", "function")
