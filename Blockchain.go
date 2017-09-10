@@ -48,10 +48,14 @@ func resolveQuery() {
 	// 	SendData -> val := true
 
 	// For the moment I'm testing what if one packet is generated.
-	val := me.String() == "10.12.0.10"
+	val1 := me.String() == "10.12.0.10"
+	val2 := me.String() == "10.12.0.15"
 
-	if val {
+	if val1 {
 		packet := bchainlibs.AssembleUnverifiedBlock(me, "data", "function")
+		toOutput(packet)
+	} else if val2 {
+		packet := bchainlibs.AssembleUnverifiedBlock(me, "data2", "function2")
 		toOutput(packet)
 	}
 }
@@ -90,6 +94,12 @@ func attendInputChannel() {
 					copyPayload := payload.Duplicate()
 					copyPayload.Type = bchainlibs.LastBlockType
 					toOutput(copyPayload) // SendLastBlock() basically
+
+					log.Debug("----- This is the blockchain")
+					for index, element := range blockchain {
+						log.Debug( string(index) + " "+ element.String() )
+					}
+					log.Debug("----- --------")
 				} else {
 					log.Debug("Payload NOT Valid")
 				}
