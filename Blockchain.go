@@ -8,6 +8,7 @@ import (
 	"github.com/chepeftw/treesiplibs"
 	"encoding/json"
 	"time"
+	"strconv"
 )
 
 // +++++++++++++++++++++++++++
@@ -100,6 +101,9 @@ func attendInputChannel() {
 						log.Debug( string(index) + " "+ element.String() )
 					}
 					log.Debug("----- --------")
+
+					// IF I'm the query generator, does this solves my query?
+					// checkQueryCompleteness()?
 				} else {
 					log.Debug("Payload NOT Valid")
 				}
@@ -132,7 +136,7 @@ func selectLeaderOfTheManet() {
 
 		query := bchainlibs.AssembleQuery(me, "function")
 		toOutput(query)
-		log.Info("QUERY_START=" + string(time.Now().Unix()))
+		log.Info("QUERY_START=" + strconv.FormatInt(time.Now().Unix(), 10))
 
 		// and QUERY END????
 	}
