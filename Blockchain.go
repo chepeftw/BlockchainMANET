@@ -75,7 +75,7 @@ func attendInputChannel() {
 			//source := payload.Source
 			tid := payload.TID
 
-			log.Debug("Incoming payload with TID = " + tid)
+			//log.Debug("Incoming payload with TID = " + tid)
 
 			switch payload.Type {
 
@@ -88,7 +88,11 @@ func attendInputChannel() {
 			case bchainlibs.VBlockType:
 				log.Debug("Packet with VBlockType")
 				if payload.IsValid(cryptoPiece) {
+
 					// Add the validation against the actual last block FROM the blockchain
+					// Check the timestamp
+					// Check if timestamp then check the following blocks, the bigger chain "should" remain
+
 					log.Debug("Payload IS Valid")
 					blockchain = append( blockchain, payload )
 
@@ -104,8 +108,12 @@ func attendInputChannel() {
 
 					// IF I'm the query generator, does this solves my query?
 					// checkQueryCompleteness()?
+
 				} else {
 					log.Debug("Payload NOT Valid")
+
+					// Then we re-add it to the unverified stuff maybe?
+
 				}
 			break
 
