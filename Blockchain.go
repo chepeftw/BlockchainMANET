@@ -144,7 +144,7 @@ func selectLeaderOfTheManet() {
 
 		query := bchainlibs.AssembleQuery(me, "function")
 		toOutput(query)
-		log.Info("QUERY_START=" + strconv.FormatInt(time.Now().Unix(), 10))
+		log.Info("QUERY_START=" + strconv.FormatInt(time.Now().UnixNano(), 10))
 
 		// and QUERY END????
 	}
