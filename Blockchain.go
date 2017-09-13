@@ -50,15 +50,16 @@ func resolveQuery() {
 
 	// For the moment I'm testing what if one packet is generated.
 	val1 := me.String() == "10.12.0.10"
-	val2 := me.String() == "10.12.0.15"
+	//val2 := me.String() == "10.12.0.15"
 
 	if val1 {
 		packet := bchainlibs.AssembleUnverifiedBlock(me, "data", "function")
 		toOutput(packet)
-	} else if val2 {
-		packet := bchainlibs.AssembleUnverifiedBlock(me, "data2", "function2")
-		toOutput(packet)
 	}
+	//else if val2 {
+	//	packet := bchainlibs.AssembleUnverifiedBlock(me, "data2", "function2")
+	//	toOutput(packet)
+	//}
 }
 
 
