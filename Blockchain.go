@@ -110,6 +110,9 @@ func attendInputChannel() {
 					// IF I'm the query generator, does this solves my query?
 					// checkQueryCompleteness()?
 
+					// After a validated block, just re run everything to get new data
+					log.Debug("PLEASE_EXIT=1234")
+
 				} else {
 					log.Debug("Payload NOT Valid")
 
