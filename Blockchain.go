@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"time"
 	"strconv"
+	"math/rand"
 )
 
 // +++++++++++++++++++++++++++
@@ -20,6 +21,7 @@ var log = logging.MustGetLogger("blockchain")
 var me net.IP = net.ParseIP(bchainlibs.LocalhostAddr)
 var cryptoPiece = "00"
 var rootNode = "10.12.0.1"
+var randomGen = rand.New( rand.NewSource( time.Now().UnixNano() ) )
 
 // +++++++++ Channels
 // For the Miner the Input and Output will be to Router
@@ -28,6 +30,7 @@ var output = make(chan string)
 var done = make(chan bool)
 
 var blockchain []bchainlibs.Packet
+var blockchain_length int
 var queries map[string]bchainlibs.Packet = make(map[string]bchainlibs.Packet)
 
 func toOutput(payload bchainlibs.Packet) {
@@ -43,23 +46,47 @@ func attendOutputChannel() {
 func resolveQuery() {
 	log.Info("Resolving GraphQL")
 
+	duration := randomGen.Intn(100000) / 500
+	log.Debug("But first waiting for " + strconv.Itoa(duration) + "ms")
+	time.Sleep( time.Millisecond * time.Duration( duration ) )
+
+	node1 := "10.12.0.5"
+	node2 := "10.12.0.10"
+	node3 := "10.12.0.15"
+	node4 := "10.12.0.20"
+
 	// Parse query
 	// Am I eligible to reply?
 	// 	Collect data
 	// 	SendData -> val := true
 
-	// For the moment I'm testing what if one packet is generated.
-	val1 := me.String() == "10.12.0.10"
-	//val2 := me.String() == "10.12.0.15"
+	packet := bchainlibs.AssembleUnverifiedBlock(me, "function")
+	sendIt := false
 
-	if val1 {
-		packet := bchainlibs.AssembleUnverifiedBlock(me, "data", "function")
+	switch me.String() {
+	case node1 :
+		packet.Block.ActualHop = net.ParseIP( node1 )
+		packet.Block.PreviousHop = net.ParseIP( bchainlibs.NullhostAddr )
+		sendIt = true
+	case node2 :
+		packet.Block.ActualHop = net.ParseIP( node2 )
+		packet.Block.PreviousHop = net.ParseIP( node1 )
+		sendIt = true
+	case node3 :
+		packet.Block.ActualHop = net.ParseIP( node3 )
+		packet.Block.PreviousHop = net.ParseIP( node2 )
+		sendIt = true
+	case node4 :
+		packet.Block.ActualHop = net.ParseIP( node4 )
+		packet.Block.PreviousHop = net.ParseIP( node3 )
+		sendIt = true
+	}
+
+	if sendIt {
+		log.Info("Node " + me.String() + " reporting for duty!!!")
 		toOutput(packet)
 	}
-	//else if val2 {
-	//	packet := bchainlibs.AssembleUnverifiedBlock(me, "data2", "function2")
-	//	toOutput(packet)
-	//}
+
 }
 
 
@@ -94,24 +121,37 @@ func attendInputChannel() {
 					// Check the timestamp
 					// Check if timestamp then check the following blocks, the bigger chain "should" remain
 
-					log.Debug("Payload IS Valid")
-					blockchain = append( blockchain, payload )
+					// Checking the actual last block of the blockchain against the received one
+					// The bigger block should be the new one
+					lastB := blockchain[blockchain_length-1]
+					if payload.PrID == lastB.BID && payload.Block.Created > lastB.Block.Created {
 
-					copyPayload := payload.Duplicate()
-					copyPayload.Type = bchainlibs.LastBlockType
-					toOutput(copyPayload) // SendLastBlock() basically
+						log.Debug("Payload IS Valid")
+						blockchain = append( blockchain, payload )
+						blockchain_length = len( blockchain )
 
-					log.Debug("----- This is the blockchain")
-					for index, element := range blockchain {
-						log.Debug( string(index) + " "+ element.String() )
+						copyPayload := payload.Duplicate()
+						copyPayload.Type = bchainlibs.LastBlockType
+						toOutput(copyPayload) // SendLastBlock() basically
+
+						log.Debug("----- This is the blockchain")
+						for index, element := range blockchain {
+							log.Debug( string(index) + " "+ element.String() )
+						}
+						log.Debug("----- --------")
+
+						// IF I'm the query generator, does this solves my query?
+						// checkQueryCompleteness()?
+						if payload.Block.ActualHop.String() == payload.Block.Destination.String() {
+							// After a validated block, just re run everything to get new data
+							log.Debug("QUERY COMPLETED, the blockchain length is " + strconv.Itoa(blockchain_length) )
+							log.Info("QUERY_END=" + strconv.FormatInt(time.Now().UnixNano(), 10))
+							log.Debug("PLEASE_EXIT=1234")
+						}
+
+					} else {
+						log.Debug("Payload NOT Valid")
 					}
-					log.Debug("----- --------")
-
-					// IF I'm the query generator, does this solves my query?
-					// checkQueryCompleteness()?
-
-					// After a validated block, just re run everything to get new data
-					log.Debug("PLEASE_EXIT=1234")
 
 				} else {
 					log.Debug("Payload NOT Valid")
@@ -149,8 +189,6 @@ func selectLeaderOfTheManet() {
 		query := bchainlibs.AssembleQuery(me, "function")
 		toOutput(query)
 		log.Info("QUERY_START=" + strconv.FormatInt(time.Now().UnixNano(), 10))
-
-		// and QUERY END????
 	}
 }
 
