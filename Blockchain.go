@@ -119,10 +119,6 @@ func attendInputChannel() {
 
 				if payload.IsValid(cryptoPiece) {
 
-					// Add the validation against the actual last block FROM the blockchain
-					// Check the timestamp
-					// Check if timestamp then check the following blocks, the bigger chain "should" remain
-
 					// Checking the actual last block of the blockchain against the received one
 					// The bigger block should be the new one
 					payloadIsValid := false
@@ -130,7 +126,9 @@ func attendInputChannel() {
 					if len( blockchain) > 0 {
 						lastB := blockchain[blockchain_length-1]
 
-						if payload.PrID == lastB.BID && payload.Block.Created > lastB.Block.Created {
+						// The check for the created time needs some improvements.
+						//if payload.PrID == lastB.BID && payload.Block.Created > lastB.Block.Created {
+						if payload.PrID == lastB.BID {
 							payloadIsValid = true
 						}
 					} else if len( blockchain ) == 0 {
