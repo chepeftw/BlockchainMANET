@@ -125,13 +125,18 @@ func attendInputChannel() {
 
 					// Checking the actual last block of the blockchain against the received one
 					// The bigger block should be the new one
-					lastB := blockchain[blockchain_length-1]
 					payloadIsValid := false
 
-					if payload.PrID == lastB.BID && payload.Block.Created > lastB.Block.Created {
-						payloadIsValid = true
+					if len( blockchain) > 0 {
+						lastB := blockchain[blockchain_length-1]
+
+						if payload.PrID == lastB.BID && payload.Block.Created > lastB.Block.Created {
+							payloadIsValid = true
+						}
 					} else if len( blockchain ) == 0 {
 						payloadIsValid = true
+					} else {
+						log.Debug("Stranger things are happening!")
 					}
 
 					if payloadIsValid {
