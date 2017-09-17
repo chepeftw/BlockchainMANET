@@ -114,7 +114,9 @@ func attendInputChannel() {
 			break
 
 			case bchainlibs.VBlockType:
-				log.Debug("Packet with VBlockType")
+				log.Debug("Packet with VBlockType, with PrID " + payload.PrID + " TID " + payload.TID + " Salt " + payload.Salt)
+				log.Debug("CryptoPiece is " + cryptoPiece)
+
 				if payload.IsValid(cryptoPiece) {
 
 					// Add the validation against the actual last block FROM the blockchain
@@ -124,7 +126,15 @@ func attendInputChannel() {
 					// Checking the actual last block of the blockchain against the received one
 					// The bigger block should be the new one
 					lastB := blockchain[blockchain_length-1]
+					payloadIsValid := false
+
 					if payload.PrID == lastB.BID && payload.Block.Created > lastB.Block.Created {
+						payloadIsValid = true
+					} else if len( blockchain ) == 0 {
+						payloadIsValid = true
+					}
+
+					if payloadIsValid {
 
 						log.Debug("Payload IS Valid")
 						blockchain = append( blockchain, payload )
