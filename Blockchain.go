@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/op/go-logging"
 	"github.com/chepeftw/bchainlibs"
-	"github.com/chepeftw/treesiplibs"
 	"net"
 	"os"
 	"encoding/json"
@@ -20,32 +19,38 @@ var log = logging.MustGetLogger("blockchain")
 // +++++++++ Global vars
 var me = net.ParseIP(bchainlibs.LocalhostAddr)
 var rootNode = "10.12.0.1"
-var randomGen = rand.New( rand.NewSource( time.Now().UnixNano() ) )
+var randomGen = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 // +++++++++ Channels
 var input = make(chan string)
 var output = make(chan string)
 var done = make(chan bool)
 
-var blockchain []bchainlibs.Packet
-var queries = make(map[string]bchainlibs.Packet)
+var blockchain []bchainlibs.Block
+var queries = make(map[string]bchainlibs.Query)
+var transactions = make(map[string][]bchainlibs.Transaction)
 
 func toOutput(payload bchainlibs.Packet) {
 	log.Debug("Sending Packet with ID " + payload.ID + " to channel output")
-	bchainlibs.SendGeneric( output, payload, log )
+	bchainlibs.SendGeneric(output, payload, log)
 }
 
 func attendOutputChannel() {
 	log.Debug("Starting output channel")
-	bchainlibs.SendToNetwork( me.String(), bchainlibs.RouterPort, output, false, log, me)
+	bchainlibs.SendToNetwork(me.String(), bchainlibs.RouterPort, output, false, log, me)
 }
 
-func resolveQuery() {
+// ------------------------------------------------------------------------------
+// Generating the Query with the function selectLeaderOfTheManet
+// And answering the query with the function resolveQuery
+// ------------------------------------------------------------------------------
+
+func resolveQuery(query bchainlibs.Query) {
 	log.Info("Resolving GraphQL")
 
 	duration := randomGen.Intn(100000) / 500
 	log.Debug("But first waiting for " + strconv.Itoa(duration) + "ms")
-	time.Sleep( time.Millisecond * time.Duration( duration ) )
+	time.Sleep(time.Millisecond * time.Duration(duration))
 
 	node1 := "10.12.0.5"
 	node2 := "10.12.0.10"
@@ -57,29 +62,31 @@ func resolveQuery() {
 	// 	Collect data
 	// 	SendData -> val := true
 
-	packet := bchainlibs.BuildTransaction(me, "function")
+	packet := bchainlibs.CreateTransaction(me)
 	sendIt := false
 
+	packet.Transaction.QueryID = query.ID
+
 	switch me.String() {
-	case node1 :
-		packet.Transaction.Data.Order = 1
-		packet.Transaction.Data.ActualHop = net.ParseIP( node1 )
-		packet.Transaction.Data.PreviousHop = net.ParseIP( bchainlibs.NullhostAddr )
+	case node1:
+		packet.Transaction.Order = 1
+		packet.Transaction.ActualHop = net.ParseIP(node1)
+		packet.Transaction.PreviousHop = net.ParseIP(bchainlibs.NullhostAddr)
 		sendIt = true
-	case node2 :
-		packet.Transaction.Data.Order = 2
-		packet.Transaction.Data.ActualHop = net.ParseIP( node2 )
-		packet.Transaction.Data.PreviousHop = net.ParseIP( node1 )
+	case node2:
+		packet.Transaction.Order = 2
+		packet.Transaction.ActualHop = net.ParseIP(node2)
+		packet.Transaction.PreviousHop = net.ParseIP(node1)
 		sendIt = true
-	case node3 :
-		packet.Transaction.Data.Order = 3
-		packet.Transaction.Data.ActualHop = net.ParseIP( node3 )
-		packet.Transaction.Data.PreviousHop = net.ParseIP( node2 )
+	case node3:
+		packet.Transaction.Order = 3
+		packet.Transaction.ActualHop = net.ParseIP(node3)
+		packet.Transaction.PreviousHop = net.ParseIP(node2)
 		sendIt = true
-	case node4 :
-		packet.Transaction.Data.Order = 4
-		packet.Transaction.Data.ActualHop = net.ParseIP( node4 )
-		packet.Transaction.Data.PreviousHop = net.ParseIP( node3 )
+	case node4:
+		packet.Transaction.Order = 4
+		packet.Transaction.ActualHop = net.ParseIP(node4)
+		packet.Transaction.PreviousHop = net.ParseIP(node3)
 		sendIt = true
 	}
 
@@ -90,10 +97,24 @@ func resolveQuery() {
 
 }
 
+func selectLeaderOfTheManet() {
+	// If I AM NEO ... send the first query
+	if me.String() == rootNode {
+		log.Info("The leader has been chosen!!! All hail the new KING!!! " + me.String())
+		time.Sleep(time.Second * 2)
 
+		query := bchainlibs.CreateQuery(me)
+		toOutput(query)
+		log.Debug("QUERY_START=" + strconv.FormatInt(time.Now().UnixNano(), 10))
+	}
+}
+
+// ------------------------------------------------------------------------------
 // Function that handles the buffer channel
+// ------------------------------------------------------------------------------
+
 func attendInputChannel() {
-	log.Debug("Starting input channel")
+	log.Info("Starting input channel")
 	for {
 		j, more := <-input
 		if more {
@@ -109,37 +130,40 @@ func attendInputChannel() {
 			switch payload.Type {
 
 			case bchainlibs.QueryType:
-				log.Debug("Packet with QueryType")
-				queries[id] = payload
-				resolveQuery()
-			break
+				log.Info("Packet with QueryType")
+				query := *payload.Query
+				queries[query.ID] = query
+				resolveQuery(query)
+				break
 
 			case bchainlibs.BlockType:
-				log.Debug("Packet with BlockType, with PacketID: " + payload.ID + ", BlockID: " + payload.Block.ID )
-				log.Debug("Previous Block ID: " + payload.Block.PreviousID + ", Nonce: " + payload.Block.Nonce + ", MerkleTreeRoot " + payload.Block.MerkleTreeRoot)
+				log.Info("Packet with BlockType, with PacketID: " + payload.ID + ", BlockID: " + payload.Block.ID)
+				log.Info("Previous Block ID: " + payload.Block.PreviousID + ", Nonce: " + payload.Block.Nonce + ", MerkleTreeRoot " + payload.Block.MerkleTreeRoot)
 
 				// Checking the actual last block of the blockchain against the received one
 				// The bigger block should be the new one
 				payloadIsValid := false
 
-				if len( blockchain) > 0 {
+				if len(blockchain) > 0 {
 					lastB := blockchain[len(blockchain)-1]
 
 					// The check for the created time needs some improvements.
 					//if payload.PrID == lastB.BID && payload.Block.Created > lastB.Block.Created {
-					if payload.Block.PreviousID == lastB.Block.ID {
+					if payload.Block.PreviousID == lastB.ID {
 						payloadIsValid = true
 					}
-				} else if len( blockchain ) == 0 {
+				} else if len(blockchain) == 0 {
 					payloadIsValid = true
 				} else {
 					log.Debug("Stranger things are happening!")
 				}
 
+				// I could and I can add MORE validations
+
 				if payloadIsValid {
 
 					log.Debug("Payload IS Valid")
-					blockchain = append( blockchain, payload )
+					blockchain = append(blockchain, *payload.Block)
 
 					copyPayload := payload
 					copyPayload.Type = bchainlibs.LastBlockType
@@ -147,7 +171,7 @@ func attendInputChannel() {
 
 					log.Debug("----- This is the blockchain")
 					for index, element := range blockchain {
-						log.Debug( string(index) + " "+ element.String() )
+						log.Debug(string(index) + " " + element.String())
 					}
 					log.Debug("----- --------")
 
@@ -166,13 +190,33 @@ func attendInputChannel() {
 					log.Debug("Payload NOT Valid")
 				}
 
-			break
+				break
+
+			case bchainlibs.TransactionType:
+				log.Info("Packet with TransactionType, with PacketID: " + payload.ID)
+				queryId := payload.Transaction.QueryID
+				transactions[queryId] = append(transactions[queryId], *payload.Transaction)
+				query := queries[queryId]
+
+				if len(transactions[queryId]) >= query.NumberLimit {
+					log.Info("Launching election by TRANSACTION NUMBER limit reached!!!")
+					electionStart := bchainlibs.CreateLaunchElectionPacket(me, query, transactions[queryId])
+					toOutput(electionStart)
+				} else if time.Now().Unix() >= (query.Created + query.TimeLimit)  {
+					log.Info("Launching election by TIME limit reached!!!")
+					electionStart := bchainlibs.CreateLaunchElectionPacket(me, query, transactions[queryId])
+					toOutput(electionStart)
+				} else {
+					log.Info("Criteria has not been met for the elections!!!")
+				}
+
+				break
 
 			case bchainlibs.InternalPing:
 				log.Info("Receiving PING from router with ID = " + id)
 				payload := bchainlibs.BuildPong(me)
 				toOutput(payload)
-			break
+				break
 
 			}
 
@@ -185,20 +229,6 @@ func attendInputChannel() {
 	}
 }
 
-func selectLeaderOfTheManet() {
-
-	// If I AM NEO ... send the first query
-	if me.String() == rootNode {
-
-		log.Info("The leader has been chosen!!! All hail the new KING!!! " + me.String())
-		time.Sleep(time.Second * 5)
-
-		query := bchainlibs.BuildQuery(me, "function")
-		toOutput(query)
-		log.Info("QUERY_START=" + strconv.FormatInt(time.Now().UnixNano(), 10))
-	}
-}
-
 func main() {
 
 	confPath := "/app/conf.yml"
@@ -206,20 +236,20 @@ func main() {
 		confPath = os.Args[1]
 	}
 	var c bchainlibs.Conf
-	c.GetConf( confPath )
+	c.GetConf(confPath)
 
 	targetSync := c.TargetSync
 	logPath := c.LogPath
 	rootNode = c.RootNode
 
 	// Logger configuration
-	f := bchainlibs.PrepareLog( logPath, "monitor" )
+	f := bchainlibs.PrepareLog(logPath, "monitor")
 	defer f.Close()
 	backend := logging.NewLogBackend(f, "", 0)
 	backendFormatter := logging.NewBackendFormatter(backend, bchainlibs.LogFormat)
 	backendLeveled := logging.AddModuleLevel(backendFormatter)
 	backendLeveled.SetLevel(logging.DEBUG, "")
-	logging.SetBackend( backendLeveled )
+	logging.SetBackend(backendLeveled)
 
 	log.Info("")
 	log.Info("------------------------------------------------------------------------")
@@ -227,19 +257,19 @@ func main() {
 	log.Info("Starting Blockchain process, waiting some time to get my own IP...")
 
 	// Wait for sync
-	bchainlibs.WaitForSync( targetSync, log )
+	bchainlibs.WaitForSync(targetSync, log)
 
 	// But first let me take a selfie, in a Go lang program is getting my own IP
-	me = treesiplibs.SelfieIP()
+	me = bchainlibs.SelfieIP()
 	log.Info("Good to go, my ip is " + me.String())
 
 	// Lets prepare a address at any address at port 10000
-	ServerAddr,err := net.ResolveUDPAddr(bchainlibs.Protocol, bchainlibs.BlockCPort)
-	treesiplibs.CheckError(err, log)
+	ServerAddr, err := net.ResolveUDPAddr(bchainlibs.Protocol, bchainlibs.BlockchainPort)
+	bchainlibs.CheckError(err, log)
 
 	// Now listen at selected port
 	ServerConn, err := net.ListenUDP(bchainlibs.Protocol, ServerAddr)
-	treesiplibs.CheckError(err, log)
+	bchainlibs.CheckError(err, log)
 	defer ServerConn.Close()
 
 	// Run the Input!
@@ -253,9 +283,9 @@ func main() {
 	buf := make([]byte, 1024)
 
 	for {
-		n,_,err := ServerConn.ReadFromUDP(buf)
+		n, _, err := ServerConn.ReadFromUDP(buf)
 		input <- string(buf[0:n])
-		treesiplibs.CheckError(err, log)
+		bchainlibs.CheckError(err, log)
 	}
 
 	close(input)
