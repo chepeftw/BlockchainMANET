@@ -252,6 +252,9 @@ func main() {
 	logging.SetBackend(backendLeveled)
 
 	log.Info("")
+	log.Info("logPath = " + logPath)
+	log.Info("rootNode = " + rootNode)
+	log.Info("")
 	log.Info("------------------------------------------------------------------------")
 	log.Info("")
 	log.Info("Starting Blockchain process, waiting some time to get my own IP...")
