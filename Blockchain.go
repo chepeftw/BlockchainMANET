@@ -137,8 +137,14 @@ func attendInputChannel() {
 				break
 
 			case bchainlibs.BlockType:
-				log.Info("Packet with BlockType, with PacketID: " + payload.ID + ", BlockID: " + payload.Block.ID)
-				log.Info("Previous Block ID: " + payload.Block.PreviousID + ", Nonce: " + payload.Block.Nonce + ", MerkleTreeRoot " + payload.Block.MerkleTreeRoot)
+
+				log.Info("Packet with BlockType with ")
+				log.Info("PacketID: " + payload.ID)
+				log.Info("BlockID: " + payload.Block.ID)
+				log.Info("Previous Block ID: " + payload.Block.PreviousID)
+				log.Info("Nonce: " + payload.Block.Nonce)
+				log.Info("MerkleTreeRoot " + payload.Block.MerkleTreeRoot)
+				log.Info("---------------------------------------")
 
 				// Checking the actual last block of the blockchain against the received one
 				// The bigger block should be the new one
@@ -155,31 +161,28 @@ func attendInputChannel() {
 				} else if len(blockchain) == 0 {
 					payloadIsValid = true
 				} else {
-					log.Debug("Stranger things are happening!")
+					log.Info("Stranger things are happening!")
 				}
 
 				// I could and I can add MORE validations
 
 				if payloadIsValid {
 
-					log.Debug("Payload IS Valid")
+					log.Info("Payload IS Valid")
 					blockchain = append(blockchain, *payload.Block)
 
 					copyPayload := payload
 					copyPayload.Type = bchainlibs.LastBlockType
 					toOutput(copyPayload) // SendLastBlock() basically
 
-					log.Debug("----- This is the blockchain")
+					log.Info("----- This is the blockchain")
 					for index, element := range blockchain {
-						log.Debug(string(index) + " " + element.String())
+						log.Info(string(index) + " " + element.String())
 					}
-					log.Debug("----- --------")
+					log.Info("----- --------")
 
 					// This is basically to end the program BUT I need to find another way
 
-					// IF I'm the query generator, does this solves my query?
-					// checkQueryCompleteness()?
-					//if payload.Block.ActualHop.String() == payload.Block.Destination.String() {
 					//	// After a validated block, just re run everything to get new data
 					//	log.Debug("QUERY COMPLETED, the blockchain length is " + strconv.Itoa(len(blockchain)) )
 					//	log.Info("QUERY_END=" + strconv.FormatInt(time.Now().UnixNano(), 10))
@@ -187,7 +190,7 @@ func attendInputChannel() {
 					//}
 
 				} else {
-					log.Debug("Payload NOT Valid")
+					log.Info("Payload NOT Valid")
 				}
 
 				break
