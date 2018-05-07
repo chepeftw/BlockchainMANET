@@ -197,6 +197,9 @@ func attendInputChannel() {
 
 			case bchainlibs.TransactionType:
 				log.Info("Packet with TransactionType, with PacketID: " + payload.ID)
+				log.Info("JSON ALERT ----> ")
+				log.Info(j)
+				log.Info("--------------------")
 				queryId := payload.Transaction.QueryID
 				transactions[queryId] = append(transactions[queryId], *payload.Transaction)
 				query := queries[queryId]
