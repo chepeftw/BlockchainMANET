@@ -9,9 +9,6 @@ import (
 	"time"
 	"strconv"
 	"math/rand"
-	"unsafe"
-	"encoding/binary"
-	"fmt"
 )
 
 // +++++++++++++++++++++++++++
@@ -210,9 +207,7 @@ func attendInputChannel() {
 				log.Info("JSON ALERT ----> ")
 				log.Info(j)
 				log.Info("--------------------")
-				log.Info(" -- unsafe.Sizeof(payload.Transaction) = " + intptrToString(unsafe.Sizeof(payload.Transaction)))
-				log.Info(" -- unsafe.Sizeof(payload) = " + intptrToString(unsafe.Sizeof(payload)))
-				if unsafe.Sizeof(payload.Transaction) > 0 {
+				if (&bchainlibs.Transaction{}) == payload.Transaction {
 					log.Info("Transaction IS NOT EMPTY")
 					queryId := payload.Transaction.QueryID
 					transactions[queryId] = append(transactions[queryId], *payload.Transaction)
@@ -254,21 +249,6 @@ func attendInputChannel() {
 		}
 
 	}
-}
-
-func intptrToString(u uintptr) string {
-	size := unsafe.Sizeof(u)
-	b := make([]byte, size)
-	switch size {
-	case 4:
-		binary.LittleEndian.PutUint32(b, uint32(u))
-	case 8:
-		binary.LittleEndian.PutUint64(b, uint64(u))
-	default:
-		panic(fmt.Sprintf("unknown uintptr size: %v", size))
-	}
-
-	return string(b[:])
 }
 
 func main() {
