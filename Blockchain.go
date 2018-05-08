@@ -214,6 +214,9 @@ func attendInputChannel() {
 					transactions[queryId] = append(transactions[queryId], *payload.Transaction)
 					query := queries[queryId]
 
+					log.Info(" -- len(transactions[queryId]) = " + strconv.Itoa(len(transactions[queryId])))
+					log.Info(" -- query.NumberLimit = " + strconv.Itoa(query.NumberLimit))
+
 					if len(transactions[queryId]) >= query.NumberLimit {
 						log.Info("Launching election by TRANSACTION NUMBER limit reached!!!")
 						electionStart := bchainlibs.CreateLaunchElectionPacket(me, query, transactions[queryId])
