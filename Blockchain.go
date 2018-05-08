@@ -49,7 +49,7 @@ func resolveQuery(query bchainlibs.Query) {
 	log.Info("Resolving GraphQL")
 
 	duration := randomGen.Intn(100000) / 500
-	log.Debug("But first waiting for " + strconv.Itoa(duration) + "ms")
+	log.Info("But first waiting for " + strconv.Itoa(duration) + "ms")
 	time.Sleep(time.Millisecond * time.Duration(duration))
 
 	node1 := "10.12.0.5"
@@ -91,7 +91,13 @@ func resolveQuery(query bchainlibs.Query) {
 	}
 
 	if sendIt {
+		log.Info("---------------------------------------------------------------------------")
+		log.Info("---------------------------------------------------------------------------")
 		log.Info("Node " + me.String() + " reporting for duty!!!")
+		log.Info("JSON.Marshal(packet) ==> ")
+		log.Info(json.Marshal(packet))
+		log.Info("---------------------------------------------------------------------------")
+		log.Info("---------------------------------------------------------------------------")
 		toOutput(packet)
 	}
 
@@ -208,7 +214,7 @@ func attendInputChannel() {
 					log.Info("Launching election by TRANSACTION NUMBER limit reached!!!")
 					electionStart := bchainlibs.CreateLaunchElectionPacket(me, query, transactions[queryId])
 					toOutput(electionStart)
-				} else if time.Now().Unix() >= (query.Created + query.TimeLimit)  {
+				} else if time.Now().Unix() >= (query.Created + query.TimeLimit) {
 					log.Info("Launching election by TIME limit reached!!!")
 					electionStart := bchainlibs.CreateLaunchElectionPacket(me, query, transactions[queryId])
 					toOutput(electionStart)
