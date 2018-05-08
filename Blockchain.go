@@ -9,6 +9,7 @@ import (
 	"time"
 	"strconv"
 	"math/rand"
+	"unsafe"
 )
 
 // +++++++++++++++++++++++++++
@@ -207,21 +208,27 @@ func attendInputChannel() {
 				log.Info("JSON ALERT ----> ")
 				log.Info(j)
 				log.Info("--------------------")
-				queryId := payload.Transaction.QueryID
-				transactions[queryId] = append(transactions[queryId], *payload.Transaction)
-				query := queries[queryId]
+				if unsafe.Sizeof(payload.Transaction) > 0 {
+					log.Info("Transaction IS NOT EMPTY")
+					queryId := payload.Transaction.QueryID
+					transactions[queryId] = append(transactions[queryId], *payload.Transaction)
+					query := queries[queryId]
 
-				if len(transactions[queryId]) >= query.NumberLimit {
-					log.Info("Launching election by TRANSACTION NUMBER limit reached!!!")
-					electionStart := bchainlibs.CreateLaunchElectionPacket(me, query, transactions[queryId])
-					toOutput(electionStart)
-				} else if time.Now().Unix() >= (query.Created + query.TimeLimit) {
-					log.Info("Launching election by TIME limit reached!!!")
-					electionStart := bchainlibs.CreateLaunchElectionPacket(me, query, transactions[queryId])
-					toOutput(electionStart)
+					if len(transactions[queryId]) >= query.NumberLimit {
+						log.Info("Launching election by TRANSACTION NUMBER limit reached!!!")
+						electionStart := bchainlibs.CreateLaunchElectionPacket(me, query, transactions[queryId])
+						toOutput(electionStart)
+					} else if time.Now().Unix() >= (query.Created + query.TimeLimit) {
+						log.Info("Launching election by TIME limit reached!!!")
+						electionStart := bchainlibs.CreateLaunchElectionPacket(me, query, transactions[queryId])
+						toOutput(electionStart)
+					} else {
+						log.Info("Criteria has not been met for the elections!!!")
+					}
 				} else {
-					log.Info("Criteria has not been met for the elections!!!")
+					log.Error("Transaction IS EMPTY")
 				}
+
 
 				break
 
