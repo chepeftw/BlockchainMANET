@@ -121,7 +121,7 @@ func selectLeaderOfTheManet() {
 }
 
 func continuity() {
-	time.Sleep(time.Second * 10)
+	time.Sleep(time.Second * 20)
 	log.Info("New query, count = " + strconv.Itoa(queryCount))
 	selectLeaderOfTheManet()
 }
