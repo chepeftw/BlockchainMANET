@@ -207,7 +207,7 @@ func attendInputChannel() {
 				log.Info("JSON ALERT ----> ")
 				log.Info(j)
 				log.Info("--------------------")
-				if (&bchainlibs.Transaction{}) != payload.Transaction {
+				if nil != payload.Transaction {
 					log.Info("Transaction IS NOT EMPTY ... MAYBE")
 					if payload.Transaction.QueryID != "" {
 						log.Info("It should be safe to say that Transaction is INDEED NOT EMPTY")
