@@ -108,7 +108,7 @@ func selectLeaderOfTheManet() {
 	// If I AM NEO ... send the first query
 	if me.String() == rootNode {
 		log.Info("The leader has been chosen!!! All hail the new KING!!! " + me.String())
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second * 5)
 
 		query := bchainlibs.CreateQuery(me)
 		toOutput(query)
