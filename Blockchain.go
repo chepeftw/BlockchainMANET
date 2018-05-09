@@ -208,25 +208,31 @@ func attendInputChannel() {
 				log.Info(j)
 				log.Info("--------------------")
 				if (&bchainlibs.Transaction{}) != payload.Transaction {
-					log.Info("Transaction IS NOT EMPTY")
-					queryId := payload.Transaction.QueryID
-					transactions[queryId] = append(transactions[queryId], *payload.Transaction)
-					query := queries[queryId]
+					log.Info("Transaction IS NOT EMPTY ... MAYBE")
+					if payload.Transaction.QueryID != "" {
+						log.Info("It should be safe to say that Transaction is INDEED NOT EMPTY")
+						queryId := payload.Transaction.QueryID
+						transactions[queryId] = append(transactions[queryId], *payload.Transaction)
+						query := queries[queryId]
 
-					log.Info(" -- len(transactions[queryId]) = " + strconv.Itoa(len(transactions[queryId])))
-					log.Info(" -- query.NumberLimit = " + strconv.Itoa(query.NumberLimit))
+						log.Info(" -- len(transactions[queryId]) = " + strconv.Itoa(len(transactions[queryId])))
+						log.Info(" -- query.NumberLimit = " + strconv.Itoa(query.NumberLimit))
 
-					if len(transactions[queryId]) >= query.NumberLimit {
-						log.Info("Launching election by TRANSACTION NUMBER limit reached!!!")
-						electionStart := bchainlibs.CreateLaunchElectionPacket(me, query, transactions[queryId])
-						toOutput(electionStart)
-					} else if time.Now().Unix() >= (query.Created + query.TimeLimit) {
-						log.Info("Launching election by TIME limit reached!!!")
-						electionStart := bchainlibs.CreateLaunchElectionPacket(me, query, transactions[queryId])
-						toOutput(electionStart)
+						if len(transactions[queryId]) >= query.NumberLimit {
+							log.Info("Launching election by TRANSACTION NUMBER limit reached!!!")
+							electionStart := bchainlibs.CreateLaunchElectionPacket(me, query, transactions[queryId])
+							toOutput(electionStart)
+						} else if time.Now().Unix() >= (query.Created + query.TimeLimit) {
+							log.Info("Launching election by TIME limit reached!!!")
+							electionStart := bchainlibs.CreateLaunchElectionPacket(me, query, transactions[queryId])
+							toOutput(electionStart)
+						} else {
+							log.Info("Criteria has not been met for the elections!!!")
+						}
 					} else {
-						log.Info("Criteria has not been met for the elections!!!")
+						log.Error("BOOM!!! It was empty after all!")
 					}
+
 				} else {
 					log.Error("Transaction IS EMPTY")
 				}
