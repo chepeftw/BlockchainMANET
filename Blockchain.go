@@ -9,6 +9,8 @@ import (
 	"time"
 	"strconv"
 	"math/rand"
+	"crypto/sha256"
+	"encoding/hex"
 )
 
 // +++++++++++++++++++++++++++
@@ -150,26 +152,61 @@ func attendInputChannel() {
 				log.Info("BlockID: " + payload.Block.ID)
 				log.Info("Previous Block ID: " + payload.Block.PreviousID)
 				log.Info("Nonce: " + payload.Block.Nonce)
-				log.Info("MerkleTreeRoot " + payload.Block.MerkleTreeRoot)
+				//log.Info("MerkleTreeRoot " + payload.Block.MerkleTreeRoot)
 				log.Info("---------------------------------------")
 
+				// ------------------------------------------------------------------------
+				// ------------------------------------------------------------------------
 				// Checking the actual last block of the blockchain against the received one
-				// The bigger block should be the new one
 				payloadIsValid := false
 
 				if len(blockchain) > 0 {
 					lastB := blockchain[len(blockchain)-1]
 
-					// The check for the created time needs some improvements.
-					//if payload.PrID == lastB.BID && payload.Block.Created > lastB.Block.Created {
 					if payload.Block.PreviousID == lastB.ID {
 						payloadIsValid = true
+						log.Info("payload.Block.PreviousID == lastB.ID (TRUE)")
 					}
 				} else if len(blockchain) == 0 {
 					payloadIsValid = true
+					log.Info("len(blockchain) == 0 (TRUE)")
 				} else {
-					log.Info("Stranger things are happening!")
+					log.Error("Stranger things are happening!")
 				}
+
+				// ------------------------------------------------------------------------
+				// ------------------------------------------------------------------------
+				// Checking "THE ID"
+				concat := payload.Block.PreviousID
+				concat += payload.Block.Nonce
+				concat += strconv.FormatInt(payload.Block.Timestamp, 10)
+				concat += bchainlibs.GetMerkleTreeRoot(transactions[payload.Block.QueryID])
+
+				sum1 := sha256.Sum256([]byte( concat ))
+				sum2 := sha256.Sum256(sum1[:])
+
+				testID := hex.EncodeToString(sum2[:])
+
+				if testID == payload.Block.ID {
+					payloadIsValid = true
+					log.Info("testID == payload.Block.ID (TRUE)")
+				} else {
+					payloadIsValid = false
+					log.Error("testID == payload.Block.ID (FALSE)")
+				}
+
+				// ------------------------------------------------------------------------
+				// ------------------------------------------------------------------------
+				// Checking Merkle Tree Root
+				//testMerkleTreeRoot := bchainlibs.GetMerkleTreeRoot(transactions[payload.Block.QueryID])
+				//
+				//if testMerkleTreeRoot == payload.Block.MerkleTreeRoot {
+				//	payloadIsValid = true
+				//	log.Info("testMerkleTreeRoot == payload.Block.MerkleTreeRoot (TRUE)")
+				//} else {
+				//	payloadIsValid = false
+				//	log.Error("testMerkleTreeRoot == payload.Block.MerkleTreeRoot (FALSE)")
+				//}
 
 				// I could and I can add MORE validations
 
@@ -220,11 +257,11 @@ func attendInputChannel() {
 
 						if len(transactions[queryId]) >= query.NumberLimit {
 							log.Info("Launching election by TRANSACTION NUMBER limit reached!!!")
-							electionStart := bchainlibs.CreateLaunchElectionPacket(me, query, transactions[queryId])
+							electionStart := bchainlibs.CreateLaunchElectionPacket(me, query)
 							toOutput(electionStart)
 						} else if time.Now().Unix() >= (query.Created + query.TimeLimit) {
 							log.Info("Launching election by TIME limit reached!!!")
-							electionStart := bchainlibs.CreateLaunchElectionPacket(me, query, transactions[queryId])
+							electionStart := bchainlibs.CreateLaunchElectionPacket(me, query)
 							toOutput(electionStart)
 						} else {
 							log.Info("Criteria has not been met for the elections!!!")
@@ -236,7 +273,6 @@ func attendInputChannel() {
 				} else {
 					log.Error("Transaction IS EMPTY")
 				}
-
 
 				break
 
