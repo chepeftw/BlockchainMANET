@@ -22,6 +22,7 @@ var log = logging.MustGetLogger("blockchain")
 var me = net.ParseIP(bchainlibs.LocalhostAddr)
 var rootNode = "10.12.0.1"
 var randomGen = rand.New(rand.NewSource(time.Now().UnixNano()))
+var queryCount = 0
 
 // +++++++++ Channels
 var input = make(chan string)
@@ -109,6 +110,7 @@ func resolveQuery(query bchainlibs.Query) {
 func selectLeaderOfTheManet() {
 	// If I AM NEO ... send the first query
 	if me.String() == rootNode {
+		queryCount += 1
 		time.Sleep(time.Second * 5)
 		log.Info("The leader has been chosen!!! All hail the new KING!!! " + me.String())
 
@@ -116,6 +118,12 @@ func selectLeaderOfTheManet() {
 		toOutput(query)
 		log.Debug("QUERY_START=" + strconv.FormatInt(time.Now().UnixNano(), 10))
 	}
+}
+
+func continuity() {
+	time.Sleep(time.Second * 10)
+	log.Info("New query, count = " + strconv.Itoa(queryCount))
+	selectLeaderOfTheManet()
 }
 
 // ------------------------------------------------------------------------------
@@ -224,6 +232,8 @@ func attendInputChannel() {
 						log.Info(string(index) + " " + element.String())
 					}
 					log.Info("----- --------")
+
+					go continuity()
 
 					// This is basically to end the program BUT I need to find another way
 
