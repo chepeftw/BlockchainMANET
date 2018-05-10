@@ -135,7 +135,7 @@ func continuity() {
 		log.Info("New query, count = " + strconv.Itoa(queryCount))
 		selectLeaderOfTheManet()
 	} else {
-		log.Debug("PLEASE_EXIT=1234")
+		log.Info("PLEASE_EXIT=1234")
 	}
 }
 
