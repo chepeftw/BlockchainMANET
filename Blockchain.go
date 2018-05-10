@@ -23,6 +23,7 @@ var me = net.ParseIP(bchainlibs.LocalhostAddr)
 var rootNode = "10.12.0.1"
 var randomGen = rand.New(rand.NewSource(time.Now().UnixNano()))
 var queryCount = 0
+var queryStart = int64(0)
 
 // +++++++++ Channels
 var input = make(chan string)
@@ -114,16 +115,28 @@ func selectLeaderOfTheManet() {
 		time.Sleep(time.Second * 5)
 		log.Info("The leader has been chosen!!! All hail the new KING!!! " + me.String())
 
+		queryStart = time.Now().UnixNano()
 		query := bchainlibs.CreateQuery(me)
 		toOutput(query)
-		log.Debug("QUERY_START=" + strconv.FormatInt(time.Now().UnixNano(), 10))
+		log.Debug("QUERY_START=" + strconv.FormatInt(queryStart, 10))
+	}
+}
+
+func measureQueryCompletitionTime() {
+	if me.String() == rootNode {
+		queryEnd := time.Now().UnixNano() - queryStart
+		log.Debug("QUERY_COMPLETE=" + strconv.FormatInt(queryEnd, 10))
 	}
 }
 
 func continuity() {
-	time.Sleep(time.Second * 20)
-	log.Info("New query, count = " + strconv.Itoa(queryCount))
-	selectLeaderOfTheManet()
+	if queryCount < 5 {
+		time.Sleep(time.Second * 5)
+		log.Info("New query, count = " + strconv.Itoa(queryCount))
+		selectLeaderOfTheManet()
+	} else {
+		log.Debug("PLEASE_EXIT=1234")
+	}
 }
 
 // ------------------------------------------------------------------------------
@@ -222,6 +235,8 @@ func attendInputChannel() {
 
 					log.Info("Payload IS Valid")
 					blockchain = append(blockchain, *payload.Block)
+
+					go measureQueryCompletitionTime()
 
 					copyPayload := payload
 					copyPayload.Type = bchainlibs.LastBlockType
