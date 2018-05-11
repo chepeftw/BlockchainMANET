@@ -234,7 +234,7 @@ func attendInputChannel() {
 				if payloadIsValid {
 
 					log.Info("Payload IS Valid")
-					log.Debug("BLOCK_VALID=1")
+					log.Debug("BLOCK_VALID_" + payload.Block.QueryID + "=1")
 					blockchain = append(blockchain, *payload.Block)
 
 					go measureQueryCompletitionTime()
@@ -261,7 +261,7 @@ func attendInputChannel() {
 
 				} else {
 					log.Info("Payload NOT Valid")
-					log.Debug("BLOCK_INVALID=1")
+					log.Debug("BLOCK_INVALID_" + payload.Block.QueryID + "=1")
 				}
 
 				break
