@@ -237,7 +237,7 @@ func attendInputChannel() {
 					log.Debug("BLOCK_VALID_" + payload.Block.QueryID + "=1")
 					blockchain = append(blockchain, *payload.Block)
 
-					go measureQueryCompletitionTime()
+					measureQueryCompletitionTime()
 
 					copyPayload := payload
 					copyPayload.Type = bchainlibs.LastBlockType
