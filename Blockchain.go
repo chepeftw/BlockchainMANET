@@ -131,7 +131,7 @@ func measureQueryCompletitionTime() {
 
 func continuity() {
 	if queryCount < 5 {
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 3)
 		log.Info("New query, count = " + strconv.Itoa(queryCount))
 		selectLeaderOfTheManet()
 	} else {
