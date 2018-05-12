@@ -109,6 +109,8 @@ func resolveQuery(query bchainlibs.Query) {
 }
 
 func selectLeaderOfTheManet() {
+	futureLeaders := [7]string{ "10.12.0.1", "10.12.0.3", "10.12.0.7", "10.12.0.9", "10.12.0.13", "10.12.0.17", "10.12.0.19"}
+
 	// If I AM NEO ... send the first query
 	if me.String() == rootNode {
 		queryCount += 1
@@ -117,6 +119,10 @@ func selectLeaderOfTheManet() {
 
 		queryStart = time.Now().UnixNano()
 		query := bchainlibs.CreateQuery(me)
+
+		rand.Seed(time.Now().UnixNano())
+		query.Query.Next = futureLeaders[ rand.Intn(7) ]
+
 		toOutput(query)
 		log.Debug("QUERY_START=" + strconv.FormatInt(queryStart, 10))
 	}
@@ -160,9 +166,11 @@ func attendInputChannel() {
 			switch payload.Type {
 
 			case bchainlibs.QueryType:
+				queryCount += 1
 				log.Info("Packet with QueryType")
 				query := *payload.Query
 				queries[query.ID] = query
+				rootNode = query.Next // Changing root node!
 				resolveQuery(query)
 				break
 
