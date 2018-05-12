@@ -276,9 +276,9 @@ func attendInputChannel() {
 
 			case bchainlibs.TransactionType:
 				log.Info("Packet with TransactionType, with PacketID: " + payload.ID)
-				log.Info("JSON ALERT ----> ")
-				log.Info(j)
-				log.Info("--------------------")
+				//log.Info("JSON ALERT ----> ")
+				//log.Info(j)
+				//log.Info("--------------------")
 				if nil != payload.Transaction {
 					log.Info("Transaction IS NOT EMPTY ... MAYBE")
 					if payload.Transaction.QueryID != "" {
