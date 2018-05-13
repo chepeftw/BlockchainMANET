@@ -21,6 +21,7 @@ var log = logging.MustGetLogger("blockchain")
 // +++++++++ Global vars
 var me = net.ParseIP(bchainlibs.LocalhostAddr)
 var rootNode = "10.12.0.1"
+var nextRootNode = "10.12.0.1"
 var randomGen = rand.New(rand.NewSource(time.Now().UnixNano()))
 var queryCount = 0
 var queryStart = int64(0)
@@ -139,6 +140,7 @@ func continuity() {
 	if queryCount < 5 {
 		time.Sleep(time.Second * 3)
 		log.Info("New query, count = " + strconv.Itoa(queryCount))
+		rootNode = nextRootNode
 		selectLeaderOfTheManet()
 	} else {
 		log.Info("PLEASE_EXIT=1234")
@@ -170,7 +172,7 @@ func attendInputChannel() {
 				log.Info("Packet with QueryType")
 				query := *payload.Query
 				queries[query.ID] = query
-				rootNode = query.Next // Changing root node!
+				nextRootNode = query.Next // Changing root node!
 				resolveQuery(query)
 				break
 
