@@ -128,10 +128,10 @@ func selectLeaderOfTheManet() {
 	}
 }
 
-func measureQueryCompletitionTime() {
+func measureQueryCompletitionTime(queryID string) {
 	if me.String() == rootNode {
 		queryEnd := time.Now().UnixNano() - queryStart
-		log.Debug("QUERY_COMPLETE=" + strconv.FormatInt(queryEnd, 10))
+		log.Debug("QUERY_COMPLETE_" + queryID + "=" + strconv.FormatInt(queryEnd, 10))
 	}
 }
 
@@ -245,7 +245,7 @@ func attendInputChannel() {
 					log.Debug("BLOCK_VALID_" + payload.Block.QueryID + "=1")
 					blockchain = append(blockchain, *payload.Block)
 
-					measureQueryCompletitionTime()
+					measureQueryCompletitionTime(payload.Block.QueryID)
 
 					copyPayload := payload
 					copyPayload.Type = bchainlibs.LastBlockType
